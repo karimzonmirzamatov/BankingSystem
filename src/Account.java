@@ -21,9 +21,9 @@ public class Account {
         }
     }
 
-    public void withdraw(double amount) {
+    public void withdraw(double amount) throws InsufficientBalanceException {
         if (amount <= 0) {
-            throw new IllegalArgumentException("Amount must be greater than 0");
+            throw new InsufficientBalanceException("Amount must be greater than 0");
         } else if (amount > balance) {
             throw new IllegalArgumentException("Not enough money on balance!");
         } else {

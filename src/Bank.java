@@ -1,18 +1,10 @@
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.*;
-import java.util.Scanner;
 
 public class Bank {
-    private ArrayList<Account> accounts;
-    private ArrayList<User> users;
-    private ArrayList<Transaction> transactions;
+    final private ArrayList<Account> accounts;
+    final private ArrayList<User> users;
+    final private ArrayList<Transaction> transactions;
 
     public Bank() {
         users = new ArrayList<>();
@@ -30,7 +22,7 @@ public class Bank {
         if (accountOwner == null) {
             throw new IllegalArgumentException("Account owner can not be empyt!");
         }
-        if (findAccount(accountID) != null) {
+        if (findAccount(accountID).isPresent()) {
             throw new IllegalArgumentException("Account with this id exists!");
         }
         Account account = new Account(accountOwner, accountID, currency, balance);
@@ -38,40 +30,44 @@ public class Bank {
         return account;
     }
 
-    public Account findAccount(int accountID) {
-        for (Account a : accounts) {
-            if (a.getAccountID() == accountID) {
-                return a;
+    public Optional<Account> findAccount(int accountID) {
+        for (Account account : accounts) {
+            if (account.getAccountID() == accountID) {
+                return Optional.of(account);
 
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     public void deposit(int accountID, double amount) {
-        Account account = findAccount(accountID);
-        if (account == null) {
-            throw new IllegalArgumentException("An account with this id is not found");
-        }
+        Account account = findAccount(accountID).orElseThrow(() -> new IllegalArgumentException("An account with this id is not found"));
         account.deposit(amount);
         Transaction deposit = new Transaction(
-                null, account, amount, account.getCurrency(), TransactionType.DEPOSIT);
+                null,
+                account,
+                amount,
+                account.getCurrency(),
+                TransactionType.DEPOSIT
+        );
         transactions.add(deposit);
     }
 
-    public void withdraw(int accountID, double amount) {
-        Account account = findAccount(accountID);
+    public boolean withdraw(int accountID, double amount) throws InsufficientBalanceException {
+       Account account = findAccount(accountID).orElseThrow(()->
+               new IllegalArgumentException("Account not found"));
 
-        if (account == null) {
-            throw new IllegalArgumentException("An account with this id is not found");
-
-        }
 
         account.withdraw(amount);
         Transaction withdraw = new Transaction(
-                account, null, amount, account.getCurrency(), TransactionType.WITHDRAW
+                account,
+                null,
+                amount,
+                account.getCurrency(),
+                TransactionType.WITHDRAW
         );
         transactions.add(withdraw);
+        return true;
 
     }
 
@@ -85,25 +81,24 @@ public class Bank {
         return null;
     }
 
-    public void transfer(int senderID, int receiverID, double amount) {
-        Account sender = findAccount(senderID);
-        Account receiver = findAccount(receiverID);
-        if (sender == null) {
-            throw new IllegalArgumentException("Account not found");
-        }
-        if (receiver == null) {
-            throw new IllegalArgumentException("Account not found");
-        }
-        if (sender.getCurrency() != receiver.getCurrency()) {
-            throw new IllegalArgumentException("Only same currency transfer");
-        }
+    public void transfer(int senderID, int receiverID, double amount) throws InsufficientBalanceException {
+        Account sender = findAccount(senderID).orElseThrow(()->new IllegalArgumentException("Sender not found"));
+        Account receiver = findAccount(receiverID).orElseThrow(()->new IllegalArgumentException("Receiver not found"));
+
         if (senderID == receiverID) {
             throw new IllegalArgumentException("Illegal argument !");
+        }else if (sender.getCurrency() != receiver.getCurrency()){
+            throw new NotAcceptableTypeOfCurrency("Currency of sender does not match with currency of receiver");
         }
         sender.withdraw(amount);
         receiver.deposit(amount);
 
-        Transaction transaction = new Transaction(sender, receiver, amount, sender.getCurrency(), TransactionType.TRANSFER);
+        Transaction transaction = new Transaction(sender,
+                receiver,
+                amount,
+                sender.getCurrency(),
+                TransactionType.TRANSFER);
+
         transactions.add(transaction);
     }
 
@@ -120,8 +115,9 @@ public class Bank {
         return new ArrayList<>(transactions);
 
     }
-    public ArrayList<Account> getAccounts(){
-        return accounts;
+
+    public List<Account> getAccounts() {
+        return List.copyOf(accounts);
     }
 
 }

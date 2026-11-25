@@ -1,11 +1,11 @@
 public class Transaction {
-    private Account sender;
-    private Account receiver;
-    private double amount;
-    private Currency currency;
+    final private Account sender;
+    final private Account receiver;
+    final private double amount;
+    final private Currency currency;
     private static int nextTransactionID = 1;
-    private final int transactionID;
-    private TransactionType type;
+    private int transactionID;
+    final private TransactionType type;
 
 
     public Transaction(Account sender, Account receiver, double amount, Currency currency, TransactionType type) {
@@ -15,10 +15,12 @@ public class Transaction {
         this.amount = amount;
         this.currency = currency;
         this.type = type;
+
     }
 
     public int getTransactionId() {
-        return nextTransactionID;
+
+        return transactionID;
     }
 
     public Account getSender() {
@@ -42,7 +44,7 @@ public class Transaction {
         return type;
     }
 
-
+    @Override
     public String toString() {
         return "Transaction { " +
                 "\nTransaction ID: " + transactionID +
